@@ -7,7 +7,7 @@ import gzip
 import json
 import time
 
-from bottle import route, run, static_file, request, BaseRequest, HTTPError
+from bottle import route, run, static_file, request, BaseRequest, HTTPError, response
 
 from ai import *
 from tricks import *
@@ -17,6 +17,19 @@ from rendering import *
 
 BaseRequest.MEMFILE_MAX = 10000 * 1000
 
+# the decorator
+def enable_cors(fn):
+    def _enable_cors(*args, **kwargs):
+        # set CORS headers
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
+        if request.method != 'OPTIONS':
+            # actual request; reply with the actual response
+            return fn(*args, **kwargs)
+
+    return _enable_cors
 
 def get_request_image(name):
     img = request.forms.get(name)
@@ -28,12 +41,14 @@ def get_request_image(name):
 
 
 @route('/<filename:path>')
+@enable_cors
 def send_static(filename):
     print(filename)
     return static_file(filename, root='game/')
 
 
 @route('/upload_v2_sketch', method='POST')
+@enable_cors
 def upload_sketch():
     timenow = time.time()
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
@@ -65,6 +80,7 @@ def upload_sketch():
 
 
 @route('/request_v2_result', method='POST')
+@enable_cors
 def request_result():
     timenow = time.time()
     room = request.forms.get("room")
