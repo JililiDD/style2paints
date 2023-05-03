@@ -17,6 +17,14 @@ from rendering import *
 
 BaseRequest.MEMFILE_MAX = 10000 * 1000
 
+def get_request_image(name):
+    img = request.forms.get(name)
+    img = re.sub('^data:image/.+;base64,', '', img)
+    img = base64.urlsafe_b64decode(img)
+    img = np.fromstring(img, dtype=np.uint8)
+    img = cv2.imdecode(img, -1)
+    return img
+
 # the decorator
 def enable_cors(fn):
     def _enable_cors(*args, **kwargs):
@@ -30,16 +38,7 @@ def enable_cors(fn):
             return fn(*args, **kwargs)
 
     return _enable_cors
-
-def get_request_image(name):
-    img = request.forms.get(name)
-    img = re.sub('^data:image/.+;base64,', '', img)
-    img = base64.urlsafe_b64decode(img)
-    img = np.fromstring(img, dtype=np.uint8)
-    img = cv2.imdecode(img, -1)
-    return img
-
-
+    
 @route('/<filename:path>')
 @enable_cors
 def send_static(filename):
